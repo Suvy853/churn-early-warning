@@ -33,26 +33,48 @@ def get_db_connection():
 
 def get_latest_predictions():
     """Get latest predictions from database."""
-    conn = get_db_connection()
-    query = '''
-    SELECT * FROM predictions
-    WHERE prediction_date = (SELECT MAX(prediction_date) FROM predictions)
-    ORDER BY risk_rank ASC
-    '''
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    
-    if df.empty:
+    try:
+        conn = get_db_connection()
+        query = '''
+        SELECT * FROM predictions
+        WHERE prediction_date = (SELECT MAX(prediction_date) FROM predictions)
+        ORDER BY risk_rank ASC
+        '''
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        return df
+    except Exception as e:
+        logging.error(f"Error getting predictions: {e}")
         return pd.DataFrame()
-    
-    return df
 
 
 def get_business_metrics():
     """Calculate key business metrics."""
-    df = get_latest_predictions()
-    
-    if df.empty:
+    try:
+        df = get_latest_predictions()
+        
+        if df.empty:
+            return {
+                'total_customers': 0,
+                'high_risk': 0,
+                'total_revenue_at_risk': 0,
+                'avg_churn_prob': 0,
+                'revenue_at_risk_high_risk': 0
+            }
+        
+        return {
+            'total_customers': len(df),
+            'high_risk': len(df[df['risk_tier'] == 'High Risk']),
+            'total_revenue_at_risk': df['annual_revenue_at_risk'].sum(),
+            'avg_churn_prob': df['churn_probability'].mean(),
+            'revenue_at_risk_high_risk': df[df['risk_tier'] == 'High Risk']['annual_revenue_at_risk'].sum()
+        }
+    except Exception as e:
+        logging.error(f"Error calculating metrics: {e}")
         return {
             'total_customers': 0,
             'high_risk': 0,
@@ -60,14 +82,6 @@ def get_business_metrics():
             'avg_churn_prob': 0,
             'revenue_at_risk_high_risk': 0
         }
-    
-    return {
-        'total_customers': len(df),
-        'high_risk': len(df[df['risk_tier'] == 'High Risk']),
-        'total_revenue_at_risk': df['annual_revenue_at_risk'].sum(),
-        'avg_churn_prob': df['churn_probability'].mean(),
-        'revenue_at_risk_high_risk': df[df['risk_tier'] == 'High Risk']['annual_revenue_at_risk'].sum()
-    }
 
 
 # ============================================================================
@@ -76,55 +90,71 @@ def get_business_metrics():
 
 def get_prescriptions():
     """Get prescriptions from database."""
-    conn = get_db_connection()
-    query = 'SELECT * FROM prescriptions ORDER BY roi DESC'
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    
-    if df.empty:
+    try:
+        conn = get_db_connection()
+        query = 'SELECT * FROM prescriptions ORDER BY roi DESC'
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        return df
+    except Exception as e:
+        logging.error(f"Error getting prescriptions: {e}")
         return pd.DataFrame()
-    
-    return df
 
 
 def get_journeys():
     """Get customer journeys from database."""
-    conn = get_db_connection()
-    query = 'SELECT * FROM customer_journeys'
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    
-    if df.empty:
+    try:
+        conn = get_db_connection()
+        query = 'SELECT * FROM customer_journeys'
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        return df
+    except Exception as e:
+        logging.error(f"Error getting journeys: {e}")
         return pd.DataFrame()
-    
-    return df
 
 
 def get_journey_details(customer_id):
     """Get detailed journey for a specific customer."""
-    conn = get_db_connection()
-    query = '''
-    SELECT * FROM engagement_raw
-    WHERE customer_id = ?
-    ORDER BY year_month ASC
-    '''
-    df = pd.read_sql_query(query, conn, params=(customer_id,))
-    conn.close()
-    
-    return df
+    try:
+        conn = get_db_connection()
+        query = '''
+        SELECT * FROM engagement_raw
+        WHERE customer_id = ?
+        ORDER BY year_month ASC
+        '''
+        df = pd.read_sql_query(query, conn, params=(customer_id,))
+        conn.close()
+        
+        return df
+    except Exception as e:
+        logging.error(f"Error getting journey details: {e}")
+        return pd.DataFrame()
 
 
 def get_shap_explanations():
     """Get SHAP explanations from database."""
-    conn = get_db_connection()
-    query = 'SELECT * FROM shap_explanations'
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    
-    if df.empty:
+    try:
+        conn = get_db_connection()
+        query = 'SELECT * FROM shap_explanations'
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        if df.empty:
+            return pd.DataFrame()
+        
+        return df
+    except Exception as e:
+        logging.error(f"Error getting SHAP explanations: {e}")
         return pd.DataFrame()
-    
-    return df
 
 
 # Define app layout
@@ -1040,4 +1070,17 @@ if __name__ == '__main__':
     print("Open your browser and go to: http://127.0.0.1:8050")
     print("\nPress Ctrl+C to stop\n")
     
-    app.run(debug=True, port=8050)
+    try:
+        # Check if database exists and has data
+        metrics = get_business_metrics()
+        if metrics['total_customers'] > 0:
+            print(f"✓ Database loaded: {metrics['total_customers']} customers found")
+        else:
+            print("⚠ Warning: No data in database. Dashboard will show empty charts.")
+            print("  Run src/scheduler.py to generate predictions.")
+    except Exception as e:
+        print(f"⚠ Warning: Could not connect to database: {e}")
+        print("  Dashboard will still run, but charts will be empty.")
+    
+    # Run with debug=False for production (Railway)
+    app.run(debug=False, host='0.0.0.0', port=8050)
