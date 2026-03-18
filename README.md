@@ -257,10 +257,6 @@ The project is also easily adaptable to real data sources, showing how to build 
 
 ## FAQ
 
-**Q: Will the app continue running if I close Railway?**
-
-A: Yes. Railway runs the application on cloud servers, not on your computer. The live link works 24/7 independently.
-
 **Q: How often is the data updated?**
 
 A: Data updates daily at 2:00 AM automatically. You can also run the pipeline manually at any time with python src/scheduler.py once.
