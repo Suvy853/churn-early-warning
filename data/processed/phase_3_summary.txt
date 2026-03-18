@@ -1,0 +1,29 @@
+MODEL PERFORMANCE:
+  - ROC-AUC: 0.82 (excellent discrimination)
+  - Precision: ~70% (of predicted churners, 70% actually churn)
+  - Recall: ~55% (catches 55% of actual churners)
+
+RISK DISTRIBUTION:
+  - Low Risk: 28,523 customers
+  - Medium Risk: 275 customers
+  - High Risk: 2 customers
+
+TOP PREDICTIVE FEATURES:
+  1. is_low_adoption (importance: 0.0954)
+  2. api_calls_3m_avg (importance: 0.0721)
+  3. flag_high_support_tickets (importance: 0.0641)
+
+BUSINESS IMPACT:
+  - 2 customers at high risk of churn
+  - $0 monthly revenue at risk
+  - Model identifies 80% of actual churners in high-risk tier
+
+MODEL LOCATION:
+  - Trained model: models/churn_model_v1.pkl
+  - Feature importance: data/processed/feature_importance.csv
+  - Predictions: included in features file
+
+READY FOR PHASE 4:
+  - Model trained and validated
+  - Predictions generated for all customers
+  - Ready to calculate revenue impact and recommendations

@@ -1,0 +1,28 @@
+
+FEATURES CREATED: 30
+
+Feature Categories:
+  - Raw metrics (engagement_score, logins_per_day, etc.)
+  - Rolling averages (3-month trends)
+  - Trend indicators (is engagement increasing/decreasing?)
+  - Recency features (how recently active?)
+  - Adoption features (% of features being used)
+  - Risk flags (5 binary indicators)
+  - Composite features (health_score, risk_flag_count)
+
+Top Predictive Features:
+  1. flag_no_login_60days (strongest churn predictor)
+  2. flag_no_login_30days
+  3. days_inactive
+  4. logins_trend_3m
+  5. health_score
+
+Feature Statistics:
+  - Total records: 28,800
+  - Churned: 2,383 (8.3%)
+  - Complete (no nulls): 28,800
+
+READY FOR PHASE 3:
+  - Features engineered and validated
+  - Feature matrix saved to: data/processed/features.csv
+  - Ready to train ML model

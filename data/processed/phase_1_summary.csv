@@ -1,0 +1,8 @@
+Metric,Value
+Total Customers,800
+Total Records,28800
+Overall Churn Rate,8.27%
+Small Company Churn,10.15%
+Large Company Churn,4.16%
+Starter Tier Churn,11.57%
+Enterprise Tier Churn,1.98%

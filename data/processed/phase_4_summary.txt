@@ -1,0 +1,30 @@
+
+BUSINESS METRICS:
+  Total Monthly Revenue: $73,674,000
+  High Risk Customers: 2 (0.0%)
+  3-Month Revenue at Risk: $9,937,608
+  Annual Revenue at Risk: $39,750,432
+
+RETENTION PRIORITIES:
+  Urgent Reviews Needed: 1 customers
+  Total Priority List: 50 customers
+  Priority Revenue at Risk: $304,818
+
+KEY RECOMMENDATIONS:
+  1. Focus on top 50 customers ($304,818 at risk)
+  2. Implement urgent account reviews for 1 customers
+  3. Run engagement campaigns for 15 customers
+
+EXPECTED IMPACT (20% retention):
+  Revenue Saved Annually: $7,950,086
+
+DELIVERABLES:
+  - Revenue at risk: data/processed/revenue_at_risk.csv
+  - Priority list: data/processed/priority_customers.csv
+  - Risk scoring: composite_risk_score column
+  - Recommendations: recommendation column for each customer
+
+READY FOR PHASE 6 (DASHBOARD):
+  - All data ready for visualization
+  - Priority customers identified
+  - Revenue impact calculated
