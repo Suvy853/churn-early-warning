@@ -1,26 +1,16 @@
-# Dockerfile
-FROM python:3.14-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Copy project files
+COPY . /app/
 
-# Copy requirements
-COPY requirements.txt .
-
-# Install Python dependencies
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY . .
+# Expose both ports
+EXPOSE 8050 8000
 
-# Expose port for dashboard
-EXPOSE 8050
-
-# Run the dashboard
-CMD ["python", "src/app.py"]
+# Run startup script that starts both services
+CMD ["python", "run.py"]
