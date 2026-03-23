@@ -1,10 +1,12 @@
 # B2B Churn Early Warning System
 
-A production-ready machine learning system that predicts customer churn, recommends retention actions, and explains predictions through an interactive dashboard.
+A production-ready machine learning system that predicts customer churn, recommends retention actions, and explains predictions through an interactive dashboard and REST API.
 
 Live Demo: https://churn-early-warning-production.up.railway.app
 
-<img width="1899" height="868" alt="image" src="https://github.com/user-attachments/assets/1d53cbb1-c97a-476e-bf55-d4f2b758b12c" />
+![alt text](image.png)
+
+---
 
 ## Overview
 
@@ -16,8 +18,10 @@ What it does:
 3. Recommends specific retention actions
 4. Tracks customer engagement over time
 5. Explains why each prediction was made
+6. Sends automated alerts for high-risk customers
+7. Monitors model health and detects prediction drift
 
-The system runs daily automatically and serves an interactive 7-tab dashboard for viewing predictions and insights.
+The system runs daily automatically and serves an interactive 7-tab dashboard plus a REST API for programmatic access.
 
 ---
 
@@ -33,23 +37,44 @@ The system runs daily automatically and serves an interactive 7-tab dashboard fo
 
 ---
 
-## Dashboard Features
+## Architecture Overview
 
-The dashboard contains 7 interactive tabs designed for different stakeholders.
+The system consists of three main components:
 
-**Tab 1: Overview** displays key business metrics including total customers, high-risk count, and revenue at risk. It shows risk distribution pie charts and churn probability histograms.
+### 1. Dashboard (Dash on port 8050)
 
-**Tab 2: Priority Customers** lists the top 50 customers at highest risk ranked by revenue impact. Each customer shows churn probability, health score, and recommended actions.
+Interactive web interface with 7 tabs for viewing predictions and insights:
 
-**Tab 3: Risk Analysis** provides deep-dive analysis into risk factors. It shows revenue at risk broken down by tier and analyzes the relationship between health score and churn probability.
+| Tab | Purpose |
+|-----|---------|
+| Overview | Key metrics and customer risk distribution |
+| Priority Customers | Top 50 at-risk customers ranked by revenue impact |
+| Risk Analysis | Deep dive into risk factors and correlations |
+| Business Impact | ROI scenarios and business case analysis |
+| Prescriptions | AI-generated retention recommendations with ROI |
+| Journey Analysis | Customer engagement timelines over 36 months |
+| Explainability | Top 3 features driving each customer's churn prediction |
 
-**Tab 4: Business Impact** answers business questions like "If we retain 20% of high-risk customers, how much revenue do we save?" It shows ROI scenarios for different retention rates.
+### 2. REST API (FastAPI)
 
-**Tab 5: Prescriptions** recommends specific retention actions for each high-risk customer. Each recommendation includes the action type, estimated cost, success probability, and expected ROI.
+Complete REST API with endpoints for programmatic access:
 
-**Tab 6: Journey Analysis** tracks customer engagement timelines across 36 months. It shows when customers became at-risk and identifies critical inflection points in their engagement.
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/predict` | POST | Get churn prediction for a customer |
+| `/recommend` | POST | Get retention recommendation |
+| `/explain` | POST | Explain why customer is at risk |
+| `/high-risk-customers` | GET | List top high-risk customers |
+| `/metrics` | GET | System health metrics |
+| `/interventions` | GET | View sent alerts and interventions |
+| `/monitoring/health` | GET | Model health score |
 
-**Tab 7: Explainability** reveals the top 3 features driving each customer's churn prediction. It explains which factors matter most for understanding why the model made its prediction.
+### 3. Action Layer
+
+Automated interventions triggered daily:
+- Email Alerts sent to sales team for high-risk customers
+- Retention Flags created for customer records
+- Intervention Tracking logs all actions to database
 
 ---
 
@@ -60,6 +85,7 @@ The dashboard contains 7 interactive tabs designed for different stakeholders.
 | Language | Python 3.14 |
 | ML Model | XGBoost (Binary Classification) |
 | Dashboard | Dash with Plotly |
+| API Framework | FastAPI with Uvicorn |
 | Database | SQLite |
 | Data Processing | Pandas, NumPy, Scikit-learn |
 | Automation | APScheduler |
@@ -73,92 +99,176 @@ The dashboard contains 7 interactive tabs designed for different stakeholders.
 
 ### Option 1: Live Demo (No Installation)
 
-Open this link in your browser: https://churn-early-warning-production.up.railway.app
+Open in browser: https://churn-early-warning-production.up.railway.app
 
-The demo runs on Railway cloud servers and is accessible 24/7. No setup required.
+No setup required.
 
 ### Option 2: Run Locally
 
-First, install all dependencies:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Then start the dashboard:
+Start the dashboard:
+
+```bash
+python run.py
+```
+
+Open in browser: http://127.0.0.1:8050
+
+### Option 3: Run Components Separately
+
+Start Dash dashboard:
 
 ```bash
 python src/app.py
 ```
 
-Open your browser to: http://127.0.0.1:8050
+Start FastAPI (in another terminal):
 
-### Option 3: Docker
+```bash
+python src/api.py
+```
 
-Run with Docker Compose:
+Dashboard: http://127.0.0.1:8050
+API Docs: http://127.0.0.1:8000/docs
+
+### Option 4: Docker
 
 ```bash
 docker-compose up
 ```
 
-Open your browser to: http://localhost:8050
-
----
-
-## Project Structure
-
-The project is organized into logical directories for data, models, code, and documentation.
-
-**data/** contains all customer and engagement data. The raw subfolder has original CSV files. The processed subfolder contains engineered features. The churn_system.db file is the SQLite database.
-
-**models/** stores the trained machine learning model. The churn_model_v1.pkl file contains the XGBoost model ready for predictions.
-
-**src/** contains all application code. The app.py file is the main Dash dashboard. Supporting files handle database operations, data ingestion, model scoring, scheduling, recommendations, journey analysis, and feature importance.
-
-**notebooks/** contains Jupyter notebooks for data science analysis and model development.
-
-Additional files at the root include Dockerfile for containerization, docker-compose.yml for orchestration, and requirements.txt for Python dependencies.
+Open: http://localhost:8050
 
 ---
 
 ## How It Works
 
-### Step 1: Data Collection
+### Daily Pipeline (Runs at 2 AM)
 
-The system collects engagement data from 800 B2B customers across 36 months of history. Data includes metrics like monthly logins, API calls, features used, support tickets, and overall engagement scores.
+1. Data Ingestion - Load new engagement data
+2. Feature Engineering - Transform raw metrics into 21 predictive features
+3. Model Scoring - XGBoost predicts churn probability for all customers
+4. Revenue Calculation - Estimate revenue at risk
+5. Action Generation - Send alerts for high-risk customers
+6. Monitoring - Detect prediction drift and anomalies
+7. Dashboard Update - Refresh all visualizations
 
-### Step 2: Feature Engineering
+### Model Details
 
-Raw engagement metrics are transformed into 21 engineered features. These include 3-month moving averages, engagement decay calculations, feature adoption rates, and various risk flags for critical events.
+Input Features (21 total):
+- Engagement metrics (logins, API calls, features used)
+- Trend indicators (3-month moving averages, decay)
+- Recency scores (days since last login)
+- Risk flags (inactivity, low adoption, support tickets)
+- Health scores (composite indicator)
 
-### Step 3: Model Training
-
-An XGBoost model is trained to predict churn probability (0-100%) for each customer. The model achieves 0.82 ROC-AUC accuracy on test data, balancing precision and recall.
-
-### Step 4: Business Logic
-
-Revenue at-risk is calculated as: Monthly Revenue × Churn Probability × 3 months. Customers are classified into three risk tiers: Low (under 30%), Medium (30-60%), and High (over 60%).
-
-### Step 5: Automated Pipeline
-
-APScheduler runs the entire pipeline daily at 2:00 AM. It ingests new data, engineers features, scores all customers, calculates revenue at-risk, generates recommendations, analyzes journeys, and updates the dashboard.
-
-### Step 6: Interactive Dashboard
-
-Dash serves the 7-tab dashboard with real-time data updated every 5 minutes. All visualizations query the SQLite database directly.
+Output:
+- Churn Probability: 0-100% likelihood of churning
+- Risk Tier: Low (<20%), Medium (20-40%), High (>40%)
+- Recommendation: Specific action to take
+- Revenue at Risk: 12-month impact if customer churns
 
 ---
 
-## Daily Automation
+## API Usage Examples
 
-The system automatically executes the complete pipeline every day at 2:00 AM.
-
-The pipeline performs these tasks in sequence: load new engagement data, engineer 21 features, score all 800 customers with the XGBoost model, calculate revenue at-risk, generate retention recommendations, analyze customer journeys, create feature importance explanations, and update the live dashboard.
-
-To run the automation manually at any time, use this command:
+### Get Customer Prediction
 
 ```bash
-python src/scheduler.py once
+curl -X POST "http://127.0.0.1:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "CUST_0001"}'
+```
+
+Response:
+
+```json
+{
+  "customer_id": "CUST_0001",
+  "churn_probability": 0.081894,
+  "risk_tier": "Low Risk",
+  "monthly_revenue": 500.0,
+  "annual_revenue_at_risk": 1226.82,
+  "health_score": 78.0,
+  "recommendation": "Monitor"
+}
+```
+
+### Get Recommendation
+
+```bash
+curl -X POST "http://127.0.0.1:8000/recommend" \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "CUST_0050"}'
+```
+
+### Explain Prediction
+
+```bash
+curl -X POST "http://127.0.0.1:8000/explain" \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "CUST_0100"}'
+```
+
+### Get System Metrics
+
+```bash
+curl "http://127.0.0.1:8000/metrics"
+```
+
+---
+
+## Monitoring and Alerts
+
+### Model Monitoring
+
+Daily checks for:
+- Prediction Drift: Detects if model behavior changed unexpectedly
+- Risk Distribution: Alerts if unusual concentration of high-risk customers
+- Prediction Statistics: Records average churn, revenue at risk, customer counts
+
+### Action Layer
+
+Automatically triggers:
+- Email Alerts to sales team for customers with >40% churn probability
+- Retention Flags in database for account review
+- Intervention Logs tracking all actions taken
+
+---
+
+## Project Structure
+
+```
+churn-early-warning/
+├── data/
+│   ├── raw/                    Raw CSV files
+│   ├── processed/features.csv  Engineered features
+│   └── churn_system.db         SQLite database
+├── models/
+│   └── churn_model_v1.pkl      Trained XGBoost
+├── src/
+│   ├── app.py                  Dash dashboard
+│   ├── api.py                  FastAPI server
+│   ├── database.py             Database schema
+│   ├── ingest.py               Data loading
+│   ├── predict.py              Model scoring
+│   ├── scheduler.py            Daily automation
+│   ├── actions.py              Alert system
+│   ├── monitoring.py           Health checks
+│   ├── prescriptions.py        Recommendations
+│   ├── journey_analysis.py     Timeline analysis
+│   └── shap_analysis.py        Feature importance
+├── notebooks/                  Jupyter analysis notebooks
+├── Dockerfile                  Container config
+├── docker-compose.yml          Docker orchestration
+├── run.py                      Dashboard startup
+├── requirements.txt            Dependencies
+└── README.md                   This file
 ```
 
 ---
@@ -168,140 +278,179 @@ python src/scheduler.py once
 | Metric | Score |
 |--------|-------|
 | ROC-AUC | 0.82 |
-| Precision (High Risk) | 0.75 |
-| Recall (High Risk) | 0.78 |
+| Precision | 0.75 |
+| Recall | 0.78 |
 | F1-Score | 0.76 |
 
-The model distributes customers across risk tiers effectively. Low risk customers (under 30% churn probability) comprise 642 customers or 80.3%. Medium risk customers (30-60% churn probability) comprise 93 customers or 11.6%. High risk customers (over 60% churn probability) comprise 65 customers or 8.1%.
+Risk Distribution:
+- Low Risk (<20%): 782 customers (97.8%)
+- Medium Risk (20-40%): 18 customers (2.3%)
+- High Risk (>40%): 5 customers (0.6%)
+
+Note: Only 5 high-risk customers in current data (max churn probability is 53%). Thresholds are calibrated for this distribution.
 
 ---
 
 ## Deployment
 
-The system is currently deployed on Railway.app, a cloud platform that automatically deploys from GitHub repositories. This ensures the latest code is always running on production servers.
+### Local Deployment
 
-The application runs 24/7 on Railway's cloud infrastructure without requiring any manual intervention. The live dashboard is accessible at https://churn-early-warning-production.up.railway.app from any browser worldwide.
+```bash
+git clone https://github.com/Suvy853/churn-early-warning.git
+cd churn-early-warning
+pip install -r requirements.txt
+python run.py
+```
 
-Other deployment options are available including AWS, Google Cloud, Azure, and Heroku. The Dockerfile included in the repository facilitates easy deployment to any cloud platform.
+### Docker Deployment
 
----
+```bash
+docker-compose up
+```
 
-## Main Application Files
+### Cloud Deployment (Railway)
 
-| File | Purpose |
-|------|---------|
-| app.py | Main Dash dashboard with 7 interactive tabs |
-| database.py | SQLite schema setup and initialization |
-| ingest.py | Data loading and validation pipeline |
-| predict.py | XGBoost model scoring |
-| scheduler.py | Daily automation orchestration |
-| prescriptions.py | Retention recommendation engine |
-| journey_analysis.py | Customer timeline and phase analysis |
-| shap_analysis.py | Feature importance calculation |
+The system is deployed on Railway.app:
 
----
-
-## Data Details
-
-### Customer Data
-
-The system analyzes 800 synthetic B2B companies distributed across three subscription tiers. Starter tier costs $500 per month. Professional tier costs $2,500 per month. Enterprise tier costs $10,000 per month.
-
-The dataset spans 36 months of engagement history from January 2023 to December 2025.
-
-### Engagement Metrics
-
-Raw engagement data includes monthly logins, API calls per month, count of features used, days since last login, support tickets opened, and an overall engagement score.
-
-### Engineered Features
-
-21 features are derived from raw metrics including 3-month moving averages, trend calculations, engagement decay metrics, feature adoption rates, and risk flags for critical events like prolonged inactivity or high support ticket volume.
+1. Connected to GitHub repository
+2. Automatic deployment on every push
+3. Dashboard runs 24/7
+4. Live at: https://churn-early-warning-production.up.railway.app
 
 ---
 
 ## Using Your Own Data
 
-The system currently uses synthetic CSV data for demonstration purposes. You can easily replace this with your own real customer data.
+To use real customer data instead of synthetic:
 
-To integrate real data, modify the data source in src/ingest.py. Replace the CSV loading code with a connection to your actual data source such as PostgreSQL, Snowflake, or BigQuery.
+Prepare two CSV files:
 
-Your data must include these required columns: customer_id, year_month (YYYY-MM format), logins_per_day, api_calls, features_used_count, days_since_last_login, support_tickets, and engagement_score.
-
-The rest of the pipeline remains unchanged, allowing you to swap data sources without modifying any other components.
-
----
-
-## Requirements
-
-This project requires Python 3.10 or higher to run successfully.
-
-Install all dependencies using pip:
-
-```bash
-pip install -r requirements.txt
+customers.csv:
+```
+customer_id, company_name, company_size, industry, subscription_tier, monthly_revenue, onboarding_date, contract_length_months
 ```
 
-The requirements.txt file contains all necessary packages including Dash, XGBoost, Pandas, NumPy, Plotly, APScheduler, and others.
+engagement_monthly.csv:
+```
+customer_id, year_month, active_users, api_calls, logins_per_day, days_since_last_login, features_used_count, support_tickets, engagement_score, churned
+```
 
----
+Update src/ingest.py to load from your source (database, API, etc.)
 
-## Why This Project
+Then regenerate predictions:
 
-This project demonstrates a complete end-to-end machine learning system from data collection to cloud deployment. It showcases production-ready code with proper error handling, logging, and clean architecture patterns.
-
-The system solves a real business problem with quantifiable ROI. It combines multiple technical skills including feature engineering, model development, data automation, and cloud deployment. It includes a live demo link that recruiters can access immediately to see the working system.
-
-The project is also easily adaptable to real data sources, showing how to build scalable ML pipelines that work in production environments.
+```bash
+python src/scheduler.py once
+```
 
 ---
 
 ## FAQ
 
-**Q: How often is the data updated?**
+Q: How often does the model update?
+A: Daily at 2:00 AM. Run python src/scheduler.py once to update manually.
 
-A: Data updates daily at 2:00 AM automatically. You can also run the pipeline manually at any time with python src/scheduler.py once.
+Q: Can I use real customer data?
+A: Yes, modify src/ingest.py to load from your data source.
 
-**Q: Can I use real customer data instead of synthetic?**
+Q: How do I add more features?
+A: Edit src/features.py to add calculations, then retrain using src/models.py.
 
-A: Yes. Replace the data source in src/ingest.py with your actual customer data. See the "Using Your Own Data" section.
+Q: Can I deploy to AWS/GCP/Azure?
+A: Yes, the Dockerfile works on any cloud platform.
 
-**Q: How do I change the automation schedule time?**
+Q: What's the cost to run this?
+A: Railway free tier covers this system. $5/month if needed for more resources.
 
-A: Edit src/scheduler.py and modify the start_scheduler() function call to specify a different time.
-
-**Q: Can I add more features to improve the model?**
-
-A: Yes. Add new calculations to src/features.py and retrain the model using the Jupyter notebooks provided.
-
-**Q: Can I deploy to other cloud platforms?**
-
-A: Yes. The Dockerfile is included in the repository and can be deployed to AWS, Google Cloud, Azure, or any other Docker-compatible platform.
+Q: Why isn't the FastAPI running on Railway?
+A: The dashboard is the main interface. FastAPI code is available on GitHub for code review. Run locally with: python src/api.py
 
 ---
 
-## Important Links
+## Project Components
 
-| Resource | URL |
-|----------|-----|
-| GitHub Repository | https://github.com/Suvy853/churn-early-warning |
-| Live Dashboard | https://churn-early-warning-production.up.railway.app |
-| Railway Platform | https://railway.app |
-| Dash Documentation | https://dash.plotly.com |
-| XGBoost Documentation | https://xgboost.readthedocs.io |
+### Data Pipeline
+- Generates 800 synthetic customers with 36 months of engagement data
+- Engineered 21 predictive features from raw metrics
+- Automated daily ingestion via APScheduler
+
+### Machine Learning
+- XGBoost binary classifier for churn prediction
+- 0.82 ROC-AUC accuracy on test set
+- SHAP-based feature importance explanations
+
+### Dashboard
+- 7 interactive tabs with Plotly visualizations
+- Real-time data queries from SQLite
+- Professional business metrics and insights
+
+### API
+- RESTful endpoints for all major functions
+- FastAPI with automatic Swagger documentation
+- Production-ready error handling
+
+### Automation
+- Daily 2 AM pipeline execution
+- Automated alerts for high-risk customers
+- Model monitoring and drift detection
 
 ---
 
-## Project Completion Status
+## What This Project Demonstrates
 
-| Phase | Task | Status |
-|-------|------|--------|
+End-to-end ML system - Not just a model, a complete production pipeline
+
+Production-ready code - Error handling, logging, documentation
+
+Real business problem - Churn prediction has clear ROI
+
+Multiple skills - Data engineering, ML, backend, DevOps
+
+Cloud deployment - Running live, accessible to stakeholders
+
+API design - RESTful service architecture
+
+Database design - Proper schema with automation
+
+Monitoring - Model health checks in production
+
+---
+
+## Project Status
+
+All 8 phases complete:
+
+| Phase | Component | Status |
+|-------|-----------|--------|
 | 1 | Data Generation | Complete |
 | 2 | Feature Engineering | Complete |
 | 3 | ML Model Training | Complete |
 | 4 | Business Logic | Complete |
-| 5 | Database and Automation | Complete |
-| 6 | Interactive Dashboard | Complete |
+| 5 | Database & Automation | Complete |
+| 6 | Dashboard | Complete |
 | 7 | Advanced Analytics | Complete |
-| 8 | Deployment and Documentation | Complete |
+| 8 | Deployment | Complete |
 
-All phases are complete and the system is production-ready with live deployment accessible at https://churn-early-warning-production.up.railway.app
+System is production-ready and live on Railway.
+
+---
+
+## Links
+
+| Resource | URL |
+|----------|-----|
+| GitHub Repo | https://github.com/Suvy853/churn-early-warning |
+| Live Demo | https://churn-early-warning-production.up.railway.app |
+| Railway Platform | https://railway.app |
+
+---
+
+## Author
+
+Built as a portfolio project demonstrating production ML engineering skills.
+
+---
+
+## License
+
+MIT License - Feel free to use this as a template for your own projects.
