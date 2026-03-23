@@ -4,7 +4,9 @@ A production-ready machine learning system that predicts customer churn, recomme
 
 Live Demo: https://churn-early-warning-production.up.railway.app
 
-![alt text](image.png)
+<img width="1895" height="871" alt="image" src="https://github.com/user-attachments/assets/64cb2c96-01a3-45b4-96ae-3c08fa1ded39" />
+
+
 
 ---
 
