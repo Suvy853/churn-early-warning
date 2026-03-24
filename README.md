@@ -3,7 +3,6 @@
 A production-ready machine learning system that predicts customer churn, recommends retention actions, and explains predictions through an interactive dashboard and REST API.
 
 Live Demo: https://churn-early-warning-production.up.railway.app
-
 <img width="1895" height="871" alt="image" src="https://github.com/user-attachments/assets/64cb2c96-01a3-45b4-96ae-3c08fa1ded39" />
 
 
